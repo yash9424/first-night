@@ -1,0 +1,40 @@
+.hover-image-wrapper {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    height: auto; /* Ensure the container grows */
+  }
+  
+  .hover-image-wrapper .main-image,
+  .hover-image-wrapper .hover-image {
+    width: 100%;
+    height: auto;
+    transition: opacity 0.4s ease-in-out;
+    display: block;
+  }
+  
+  .hover-image-wrapper .main-image {
+    position: relative;
+    z-index: 1;
+    opacity: 1;
+  }
+  
+  .hover-image-wrapper .hover-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 2;
+    opacity: 0;
+  }
+  
+  .hover-image-wrapper:hover .hover-image {
+    opacity: 1;
+  }
+  
+  .hover-image-wrapper:hover .main-image {
+    opacity: 0;
+  }
+  /* Ensure badge stays on top */
+.z-3 {
+    z-index: 3 !important;
+  }

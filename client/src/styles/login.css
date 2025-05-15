@@ -1,0 +1,166 @@
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  padding: 2rem 0;
+}
+
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.login-box {
+  background: white;
+  padding: 2.5rem;
+  border-radius: 15px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 450px;
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.login-header h2 {
+  color: #2d3748;
+  font-size: 2rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.login-header p {
+  color: #718096;
+  font-size: 1rem;
+}
+
+.login-form {
+  margin-top: 1.5rem;
+}
+
+.form-group-custom {
+  margin-bottom: 1.5rem;
+}
+
+.form-group-custom label {
+  color: #4a5568;
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.form-control-custom {
+  height: 3rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.form-control-custom:focus {
+  border-color: #4299e1;
+  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+}
+
+.login-button {
+  width: 100%;
+  height: 3rem;
+  background: #4299e1;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 1rem;
+  font-weight: 500;
+  margin-top: 1rem;
+  transition: all 0.3s ease;
+}
+
+.login-button:hover {
+  background: #3182ce;
+  transform: translateY(-1px);
+}
+
+.login-button:disabled {
+  background: #a0aec0;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.forgot-password-link {
+  text-align: right;
+  margin-top: -0.5rem;
+  margin-bottom: 1rem;
+}
+
+.forgot-password-link button {
+  color: #4299e1;
+  font-size: 0.9rem;
+  text-decoration: none;
+  padding: 0;
+}
+
+.forgot-password-link button:hover {
+  color: #3182ce;
+  text-decoration: underline;
+}
+
+.register-link {
+  text-align: center;
+  margin-top: 1.5rem;
+  color: #718096;
+  font-size: 0.9rem;
+}
+
+.register-link-text {
+  color: #4299e1;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.register-link-text:hover {
+  color: #3182ce;
+  text-decoration: underline;
+}
+
+.alert-custom {
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+}
+
+/* Modal Styles */
+.forgot-password-modal .modal-content {
+  border-radius: 15px;
+  border: none;
+}
+
+.forgot-password-modal .modal-header {
+  border-bottom: 1px solid #e2e8f0;
+  padding: 1.5rem;
+}
+
+.forgot-password-modal .modal-title {
+  color: #2d3748;
+  font-weight: 600;
+}
+
+.forgot-password-modal .modal-body {
+  padding: 1.5rem;
+}
+
+/* Responsive Styles */
+@media (max-width: 576px) {
+  .login-box {
+    padding: 1.5rem;
+    margin: 0 1rem;
+  }
+
+  .login-header h2 {
+    font-size: 1.75rem;
+  }
+} 

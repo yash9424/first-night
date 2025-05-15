@@ -1,0 +1,136 @@
+/* Action Buttons Styles */
+.btn-action {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+    text-transform: uppercase;
+    font-weight: 500;
+    font-size: 14px;
+    padding: 12px 24px;
+    transition: all 0.3s ease;
+    border-radius: 0;
+}
+
+.btn-action:hover,
+.btn-action:focus,
+.btn-action:active {
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
+    color: white;
+}
+
+/* Buy Now Button */
+.btn-buy-now {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+    font-weight: 600;
+}
+
+.btn-buy-now:hover,
+.btn-buy-now:focus,
+.btn-buy-now:active {
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
+    color: white;
+}
+
+/* Add to Cart Button */
+.btn-add-cart {
+    background-color: white;
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    font-weight: 500;
+}
+
+.btn-add-cart:hover,
+.btn-add-cart:focus,
+.btn-add-cart:active {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+}
+
+/* Place Order Button */
+.btn-place-order {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+    font-weight: 600;
+    padding: 15px 30px;
+    width: 100%;
+}
+
+.btn-place-order:hover,
+.btn-place-order:focus,
+.btn-place-order:active {
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
+    color: white;
+}
+
+/* View Order Button */
+.btn-view-order {
+    background-color: transparent;
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    font-weight: 500;
+}
+
+.btn-view-order:hover,
+.btn-view-order:focus,
+.btn-view-order:active {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+}
+
+/* Form Styles */
+.order-form .form-control {
+    border-radius: 0;
+    border-color: var(--border-color);
+    padding: 12px 15px;
+}
+
+.order-form .form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(196, 160, 60, 0.25);
+}
+
+.order-form .form-label {
+    color: var(--secondary-color);
+    font-weight: 500;
+}
+
+/* Loading State */
+.btn-loading {
+    opacity: 0.8;
+    cursor: not-allowed;
+}
+
+/* Disabled State */
+.btn-action:disabled,
+.btn-buy-now:disabled,
+.btn-add-cart:disabled,
+.btn-place-order:disabled,
+.btn-view-order:disabled {
+    background-color: #cccccc;
+    border-color: #cccccc;
+    color: #666666;
+    cursor: not-allowed;
+}
+
+/* Remove Button */
+.btn-remove {
+    background-color: transparent;
+    border-color: var(--danger-color);
+    color: var(--danger-color);
+}
+
+.btn-remove:hover,
+.btn-remove:focus,
+.btn-remove:active {
+    background-color: var(--danger-color);
+    border-color: var(--danger-color);
+    color: white;
+} 

@@ -1,0 +1,18 @@
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.form-control:focus {
+    border-color: #333333;
+    box-shadow: 0 0 0 0.2rem rgba(51, 153, 204, 0.25);
+}
+
+.btn-primary {
+    background-color: #333333;
+    border-color: #333333;
+}
+
+.btn-primary:hover {
+    background-color: #645c5c;
+    border-color: #645c5c;
+} 

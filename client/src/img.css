@@ -1,0 +1,22 @@
+.hover-img-wrapper {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hover-img-wrapper img {
+    transition: opacity 0.3s ease-in-out;
+  }
+
+  .hover-img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    opacity: 0;
+  }
+  .hover-img-wrapper:hover .hover-img {
+    opacity: 1;
+  }
+
+  .hover-img-wrapper:hover .default-img {
+    opacity: 0;
+  }

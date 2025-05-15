@@ -1,0 +1,251 @@
+/* Custom Navbar Styles */
+.custom-navbar {
+    background-color: #ffffff;
+    border-bottom: 1px solid #e5e5e5;
+    padding: 10px 0;
+    width: 100%;
+    z-index: 1000;
+}
+
+/* Navigation Links */
+.nav-link-custom {
+    color: #333333 !important;
+    font-weight: 500;
+    font-size: 14px;
+    text-transform: uppercase;
+    padding: 8px 12px !important;
+    margin: 0 4px;
+    transition: color 0.3s ease;
+}
+
+.nav-link-custom:hover {
+    color: #c4a03c !important;
+}
+
+/* Dropdown Styles */
+.custom-dropdown .dropdown-toggle {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px;
+    vertical-align: middle;
+    color: #333333 !important;
+    font-weight: 500;
+    font-size: 14px;
+    text-transform: uppercase;
+    padding: 8px 12px !important;
+}
+
+.custom-dropdown .dropdown-toggle:hover {
+    color: #c4a03c !important;
+}
+
+.custom-dropdown .dropdown-menu {
+    border-radius: 0;
+    border: 1px solid #e5e5e5;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.custom-dropdown .dropdown-item {
+    color: #333333;
+    font-size: 14px;
+    padding: 10px 20px;
+}
+
+.custom-dropdown .dropdown-item:hover {
+    background-color: #f8f8f8;
+    color: #c4a03c;
+}
+
+/* Search Bar */
+.search-input {
+    border-radius: 0;
+    border: 1px solid #e5e5e5;
+    font-size: 14px;
+    padding: 8px 12px;
+}
+
+.search-input:focus {
+    box-shadow: none;
+    border-color: #c4a03c;
+}
+
+.search-button {
+    border-radius: 0;
+    border: 1px solid #333333;
+    color: #333333;
+    padding: 8px 16px;
+}
+
+.search-button:hover {
+    background-color: #333333;
+    color: #ffffff;
+}
+
+/* Mobile Specific Styles */
+@media (max-width: 991.98px) {
+    .navbar-collapse {
+        background-color: white;
+        padding: 15px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+    
+    .navbar-toggler {
+        border: none;
+        padding: 5px;
+    }
+    
+    .navbar-toggler:focus {
+        box-shadow: none;
+        outline: none;
+    }
+    
+    .search-form-mobile {
+        width: 100%;
+        margin: 10px 0;
+    }
+    
+    .custom-dropdown .dropdown-menu {
+        border: none;
+        box-shadow: none;
+        padding-left: 15px;
+    }
+    
+    .nav-link-custom {
+        font-size: 18px;
+        padding: 14px 0 !important;
+        margin: 0;
+        border-bottom: 1px solid #f1f1f1;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .navbar-nav {
+        width: 100%;
+    }
+    
+    .nav-link-custom svg {
+        margin-right: 10px;
+        font-size: 1.3em;
+    }
+}
+
+/* Small mobile devices */
+@media (max-width: 575.98px) {
+    .navbar-brand img {
+        height: 24px;
+    }
+    
+    .search-input {
+        font-size: 12px;
+    }
+    
+    .search-button {
+        padding: 6px 10px;
+    }
+}
+
+/* Cart and Account Links */
+.nav-link-custom .fa-shopping-cart,
+.nav-link-custom .fa-user {
+    margin-right: 5px;
+}
+
+/* Navbar Brand/Logo */
+.navbar-brand {
+    padding: 0;
+}
+
+/* Active Link State */
+.nav-link-custom.active {
+    color: #c4a03c !important;
+}
+
+/* Divider in Dropdowns */
+.dropdown-divider {
+    border-top-color: #e5e5e5;
+    margin: 4px 0;
+}
+
+.footer-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.nav-link-custom, .nav-link-custom span, .nav-link-custom svg {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+}
+
+.nav-link-custom svg {
+  margin-right: 6px;
+  font-size: 1.1em;
+}
+
+.track-order-card {
+  background: #fff;
+  border-radius: 1.5rem;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+  border: none;
+}
+
+.track-order-card .card-header {
+  border-radius: 1.5rem 1.5rem 0 0 !important;
+  background: #111 !important;
+  border: none;
+}
+
+.track-order-card .form-control {
+  border-radius: 0.75rem;
+  border: 1px solid #e5e5e5;
+  font-size: 1rem;
+  padding: 0.75rem 1rem;
+}
+
+.track-order-card .form-control:focus {
+  border-color: #c4a03c;
+  box-shadow: 0 0 0 2px #c4a03c22;
+}
+
+.track-order-card .btn-primary {
+  background: #111;
+  border: none;
+  border-radius: 2rem;
+  font-weight: 600;
+  font-size: 1.1rem;
+  letter-spacing: 0.5px;
+  padding: 0.75rem 0;
+  transition: background 0.2s;
+}
+
+.track-order-card .btn-primary:hover, .track-order-card .btn-primary:focus {
+  background: #c4a03c;
+  color: #fff;
+}
+
+.track-order-card .form-label {
+  font-weight: 500;
+  color: #222;
+  margin-bottom: 0.5rem;
+}
+
+.track-order-card .form-text {
+  color: #888;
+  font-size: 0.95em;
+}
+
+.track-order-card .alert {
+  border-radius: 0.75rem;
+  font-size: 1em;
+}
+
+.track-order-card .badge {
+  font-size: 1em;
+  padding: 0.5em 1em;
+  border-radius: 1em;
+} 

@@ -1,0 +1,25 @@
+.filters-section {
+  background-color: #fff;
+  padding: 1rem;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.filters-section .form-select {
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+}
+
+.products-grid .card {
+  transition: transform 0.2s;
+  border: none;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.products-grid .card:hover {
+  transform: translateY(-5px);
+}
+
+.dropdown-toggle {
+  width: 100%;
+} 
