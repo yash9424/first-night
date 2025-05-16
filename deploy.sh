@@ -31,7 +31,7 @@ sudo chown -R $USER:$USER /var/www
 
 # Clone repository if not exists
 if [ ! -d "/root/first-night" ]; then
-    echo "�� Cloning repository..."
+    echo "📥 Cloning repository..."
     git clone https://github.com/yash9424/first-night.git /root/first-night
 fi
 
@@ -58,8 +58,63 @@ npm install
 mkdir -p /var/www/uploads
 chmod 755 /var/www/uploads
 
-# Setup Nginx
+# Setup Nginx - First with HTTP only
 echo "🌐 Configuring Nginx..."
+cat > /etc/nginx/sites-available/datartechnologies.com << 'EOL'
+server {
+    listen 80;
+    server_name datartechnologies.com www.datartechnologies.com;
+
+    location / {
+        root /var/www/client;
+        try_files $uri $uri/ /index.html;
+        expires 30d;
+        add_header Cache-Control "public, no-transform";
+    }
+
+    location /api {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /uploads {
+        alias /var/www/uploads;
+        expires 30d;
+        add_header Cache-Control "public, no-transform";
+    }
+
+    # Gzip compression
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 10240;
+    gzip_proxied expired no-cache no-store private auth;
+    gzip_types text/plain text/css text/xml text/javascript application/x-javascript application/xml application/javascript;
+    gzip_disable "MSIE [1-6]\.";
+}
+EOL
+
+# Enable site
+sudo ln -sf /etc/nginx/sites-available/datartechnologies.com /etc/nginx/sites-enabled/
+sudo rm -f /etc/nginx/sites-enabled/default
+
+# Test Nginx configuration
+sudo nginx -t
+
+# Restart Nginx
+sudo systemctl restart nginx
+
+# Install SSL certificate
+echo "🔒 Installing SSL certificate..."
+sudo certbot --nginx -d datartechnologies.com -d www.datartechnologies.com --non-interactive --agree-tos --email your-email@example.com
+
+# Update Nginx configuration with SSL settings
 cat > /etc/nginx/sites-available/datartechnologies.com << 'EOL'
 server {
     listen 80;
@@ -82,7 +137,6 @@ server {
     add_header X-Content-Type-Options "nosniff";
     add_header Strict-Transport-Security "max-age=31536000; includeSubDomains";
 
-    # Client build files
     location / {
         root /var/www/client;
         try_files $uri $uri/ /index.html;
@@ -90,7 +144,6 @@ server {
         add_header Cache-Control "public, no-transform";
     }
 
-    # API endpoints
     location /api {
         proxy_pass http://localhost:3000;
         proxy_http_version 1.1;
@@ -103,7 +156,6 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    # Uploads directory
     location /uploads {
         alias /var/www/uploads;
         expires 30d;
@@ -120,20 +172,15 @@ server {
 }
 EOL
 
-# Enable site
-sudo ln -sf /etc/nginx/sites-available/datartechnologies.com /etc/nginx/sites-enabled/
-sudo rm -f /etc/nginx/sites-enabled/default
-
-# Install SSL certificate
-echo "🔒 Installing SSL certificate..."
-sudo certbot --nginx -d datartechnologies.com -d www.datartechnologies.com --non-interactive --agree-tos --email your-email@example.com
+# Test and restart Nginx
+sudo nginx -t
+sudo systemctl restart nginx
 
 # Start/Restart services
 echo "🔄 Starting services..."
 sudo pm2 delete datartechnologies-api || true
-sudo pm2 start server.js --name "datartechnologies-api"
+sudo pm2 start ecosystem.config.js
 sudo pm2 save
-sudo systemctl restart nginx
 
 echo "✅ Deployment completed successfully!"
 echo "🌐 Your site should be live at https://datartechnologies.com" 
