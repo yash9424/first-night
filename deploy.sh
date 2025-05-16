@@ -29,6 +29,20 @@ echo "📦 Updating system packages..."
 sudo apt-get update
 sudo apt-get upgrade -y
 
+# Check for kernel updates
+echo "🔍 Checking for kernel updates..."
+CURRENT_KERNEL=$(uname -r)
+LATEST_KERNEL=$(dpkg -l | grep linux-image-generic | awk '{print $3}' | cut -d'-' -f1-3)
+
+if [ "$CURRENT_KERNEL" != "$LATEST_KERNEL-generic" ]; then
+    echo "⚠️ Kernel update available: $LATEST_KERNEL-generic"
+    echo "⚠️ Current kernel: $CURRENT_KERNEL"
+    echo "⚠️ A system reboot will be required after deployment"
+    KERNEL_UPDATE_NEEDED=true
+else
+    KERNEL_UPDATE_NEEDED=false
+fi
+
 # Install required packages
 echo "📦 Installing required packages..."
 sudo apt-get install -y curl git nginx certbot python3-certbot-nginx
@@ -213,4 +227,11 @@ sudo systemctl start apt-daily-upgrade.service
 sudo systemctl start apt-daily-upgrade.timer
 
 echo "✅ Deployment completed successfully!"
-echo "🌐 Your site should be live at https://datartechnologies.com" 
+echo "🌐 Your site should be live at https://datartechnologies.com"
+
+# Check if reboot is needed
+if [ "$KERNEL_UPDATE_NEEDED" = true ]; then
+    echo "⚠️ IMPORTANT: A system reboot is required to apply kernel updates."
+    echo "⚠️ Please run: sudo reboot"
+    echo "⚠️ After reboot, your site will continue running normally."
+fi 
