@@ -162,7 +162,7 @@ sudo certbot register --agree-tos --email vivekvora3226@gmail.com --non-interact
 
 # Install SSL certificate
 echo "🔒 Installing SSL certificate..."
-sudo certbot --nginx -d datartechnologies.com -d www.datartechnologies.com --non-interactive --agree-tos --email vivekvora3226@gmail.com --webroot -w /var/www/letsencrypt
+sudo certbot certonly --webroot -w /var/www/letsencrypt -d datartechnologies.com -d www.datartechnologies.com --non-interactive --agree-tos --email vivekvora3226@gmail.com
 
 # Update Nginx configuration with SSL settings
 sudo cat > /etc/nginx/sites-available/datartechnologies.com << 'EOL'
