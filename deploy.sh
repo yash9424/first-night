@@ -5,6 +5,25 @@ set -e
 
 echo "🚀 Starting deployment process..."
 
+# Clean up any existing locks
+echo "🔓 Cleaning up package locks..."
+sudo kill 7031 2>/dev/null || true
+sudo rm -f /var/lib/dpkg/lock-frontend
+sudo rm -f /var/lib/apt/lists/lock
+sudo rm -f /var/cache/apt/archives/lock
+sudo rm -f /var/lib/dpkg/lock
+
+# Stop automatic updates
+echo "🛑 Stopping automatic updates..."
+sudo systemctl stop apt-daily.service
+sudo systemctl stop apt-daily.timer
+sudo systemctl stop apt-daily-upgrade.service
+sudo systemctl stop apt-daily-upgrade.timer
+
+# Reconfigure package system
+echo "⚙️ Reconfiguring package system..."
+sudo dpkg --configure -a
+
 # Update system
 echo "📦 Updating system packages..."
 sudo apt-get update
@@ -47,7 +66,7 @@ echo "🏗️ Building client..."
 cd client
 npm install
 npm run build:prod
-cp -r build/* /var/www/client/
+sudo cp -r build/* /var/www/client/
 
 # Setup server
 echo "🏗️ Setting up server..."
@@ -55,12 +74,12 @@ cd ../server
 npm install
 
 # Create uploads directory if not exists
-mkdir -p /var/www/uploads
-chmod 755 /var/www/uploads
+sudo mkdir -p /var/www/uploads
+sudo chmod 755 /var/www/uploads
 
 # Setup Nginx - First with HTTP only
 echo "🌐 Configuring Nginx..."
-cat > /etc/nginx/sites-available/datartechnologies.com << 'EOL'
+sudo cat > /etc/nginx/sites-available/datartechnologies.com << 'EOL'
 server {
     listen 80;
     server_name datartechnologies.com www.datartechnologies.com;
@@ -116,10 +135,10 @@ sudo certbot register --agree-tos --email vivekvora3226@gmail.com --non-interact
 
 # Install SSL certificate
 echo "🔒 Installing SSL certificate..."
-sudo certbot --nginx -d datartechnologies.com -d www.datartechnologies.com --non-interactive --agree-tos --email admin@datartechnologies.com
+sudo certbot --nginx -d datartechnologies.com -d www.datartechnologies.com --non-interactive --agree-tos --email vivekvora3226@gmail.com
 
 # Update Nginx configuration with SSL settings
-cat > /etc/nginx/sites-available/datartechnologies.com << 'EOL'
+sudo cat > /etc/nginx/sites-available/datartechnologies.com << 'EOL'
 server {
     listen 80;
     server_name datartechnologies.com www.datartechnologies.com;
@@ -185,6 +204,13 @@ echo "🔄 Starting services..."
 sudo pm2 delete datartechnologies-api || true
 sudo pm2 start ecosystem.config.js
 sudo pm2 save
+
+# Re-enable automatic updates
+echo "🔄 Re-enabling automatic updates..."
+sudo systemctl start apt-daily.service
+sudo systemctl start apt-daily.timer
+sudo systemctl start apt-daily-upgrade.service
+sudo systemctl start apt-daily-upgrade.timer
 
 echo "✅ Deployment completed successfully!"
 echo "🌐 Your site should be live at https://datartechnologies.com" 
