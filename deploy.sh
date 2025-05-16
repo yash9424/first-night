@@ -91,12 +91,17 @@ npm install
 sudo mkdir -p /var/www/uploads
 sudo chmod 755 /var/www/uploads
 
-# Setup Nginx - First with HTTP only
+# Setup Nginx - First with HTTP only and ACME challenge location
 echo "🌐 Configuring Nginx..."
 sudo cat > /etc/nginx/sites-available/datartechnologies.com << 'EOL'
 server {
     listen 80;
     server_name datartechnologies.com www.datartechnologies.com;
+
+    # ACME Challenge location
+    location /.well-known/acme-challenge/ {
+        root /var/www/letsencrypt;
+    }
 
     location / {
         root /var/www/client;
@@ -133,6 +138,10 @@ server {
 }
 EOL
 
+# Create ACME challenge directory
+sudo mkdir -p /var/www/letsencrypt/.well-known/acme-challenge
+sudo chown -R www-data:www-data /var/www/letsencrypt
+
 # Enable site
 sudo ln -sf /etc/nginx/sites-available/datartechnologies.com /etc/nginx/sites-enabled/
 sudo rm -f /etc/nginx/sites-enabled/default
@@ -143,13 +152,17 @@ sudo nginx -t
 # Restart Nginx
 sudo systemctl restart nginx
 
+# Wait for DNS propagation
+echo "⏳ Waiting for DNS propagation (30 seconds)..."
+sleep 30
+
 # Register with Let's Encrypt first
 echo "🔒 Registering with Let's Encrypt..."
 sudo certbot register --agree-tos --email vivekvora3226@gmail.com --non-interactive
 
 # Install SSL certificate
 echo "🔒 Installing SSL certificate..."
-sudo certbot --nginx -d datartechnologies.com -d www.datartechnologies.com --non-interactive --agree-tos --email vivekvora3226@gmail.com
+sudo certbot --nginx -d datartechnologies.com -d www.datartechnologies.com --non-interactive --agree-tos --email vivekvora3226@gmail.com --webroot -w /var/www/letsencrypt
 
 # Update Nginx configuration with SSL settings
 sudo cat > /etc/nginx/sites-available/datartechnologies.com << 'EOL'
