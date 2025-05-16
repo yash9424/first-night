@@ -43,7 +43,7 @@ fi
 
 # Install required packages
 echo "📦 Installing required packages..."
-sudo apt-get install -y curl git nginx certbot python3-certbot-nginx
+sudo apt-get install -y curl git nginx
 
 # Install Node.js 18.x (official way)
 echo "📦 Installing Node.js..."
@@ -89,21 +89,16 @@ npm install
 sudo mkdir -p /var/www/uploads
 sudo chmod 755 /var/www/uploads
 
-# Setup Nginx - First with HTTP only and ACME challenge location
+# Setup Nginx - HTTP only (no SSL)
 echo "🌐 Configuring Nginx..."
 sudo tee /etc/nginx/sites-available/technovatechnologies.in > /dev/null << 'EOL'
 server {
     listen 80;
     server_name technovatechnologies.in www.technovatechnologies.in;
 
-    # ACME Challenge location
-    location /.well-known/acme-challenge/ {
-        root /var/www/letsencrypt;
-    }
-
     location / {
         root /var/www/client;
-        try_files \$uri \$uri/ /index.html;
+        try_files $uri $uri/ /index.html;
         expires 30d;
         add_header Cache-Control "public, no-transform";
     }
@@ -111,13 +106,13 @@ server {
     location /api {
         proxy_pass http://localhost:3000;
         proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
-        proxy_set_header Host \$host;
-        proxy_cache_bypass \$http_upgrade;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
     }
 
     location /uploads {
@@ -135,10 +130,6 @@ server {
     gzip_disable "MSIE [1-6]\\.";
 }
 EOL
-
-# Create ACME challenge directory
-sudo mkdir -p /var/www/letsencrypt/.well-known/acme-challenge
-sudo chown -R www-data:www-data /var/www/letsencrypt
 
 # Enable site
 sudo ln -sf /etc/nginx/sites-available/technovatechnologies.in /etc/nginx/sites-enabled/
@@ -148,80 +139,6 @@ sudo rm -f /etc/nginx/sites-enabled/default
 sudo nginx -t
 
 # Restart Nginx
-sudo systemctl restart nginx
-
-# Wait for DNS propagation
-echo "⏳ Waiting for DNS propagation (30 seconds)..."
-sleep 30
-
-# Register with Let's Encrypt first
-echo "🔒 Registering with Let's Encrypt..."
-sudo certbot register --agree-tos --email vivekvora3226@gmail.com --non-interactive || true
-
-# Install SSL certificate
-echo "🔒 Installing SSL certificate..."
-sudo certbot certonly --webroot -w /var/www/letsencrypt -d technovatechnologies.in -d www.technovatechnologies.in --non-interactive --agree-tos --email vivekvora3226@gmail.com
-
-# Update Nginx configuration with SSL settings
-sudo tee /etc/nginx/sites-available/technovatechnologies.in > /dev/null << 'EOL'
-server {
-    listen 80;
-    server_name technovatechnologies.in www.technovatechnologies.in;
-    return 301 https://\$server_name\$request_uri;
-}
-
-server {
-    listen 443 ssl http2;
-    server_name technovatechnologies.in www.technovatechnologies.in;
-
-    ssl_certificate /etc/letsencrypt/live/technovatechnologies.in/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/technovatechnologies.in/privkey.pem;
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_ciphers HIGH:!aNULL:!MD5;
-
-    # Security headers
-    add_header X-Frame-Options "SAMEORIGIN";
-    add_header X-XSS-Protection "1; mode=block";
-    add_header X-Content-Type-Options "nosniff";
-    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains";
-
-    location / {
-        root /var/www/client;
-        try_files \$uri \$uri/ /index.html;
-        expires 30d;
-        add_header Cache-Control "public, no-transform";
-    }
-
-    location /api {
-        proxy_pass http://localhost:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host \$host;
-        proxy_cache_bypass \$http_upgrade;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-    }
-
-    location /uploads {
-        alias /var/www/uploads;
-        expires 30d;
-        add_header Cache-Control "public, no-transform";
-    }
-
-    # Gzip compression
-    gzip on;
-    gzip_vary on;
-    gzip_min_length 10240;
-    gzip_proxied expired no-cache no-store private auth;
-    gzip_types text/plain text/css text/xml text/javascript application/x-javascript application/xml application/javascript;
-    gzip_disable "MSIE [1-6]\\.";
-}
-EOL
-
-# Test and restart Nginx
-sudo nginx -t
 sudo systemctl restart nginx
 
 # Start/Restart services
@@ -238,7 +155,7 @@ sudo systemctl start apt-daily-upgrade.service || true
 sudo systemctl start apt-daily-upgrade.timer || true
 
 echo "✅ Deployment completed successfully!"
-echo "🌐 Your site should be live at https://technovatechnologies.in"
+echo "🌐 Your site should be live at http://technovatechnologies.in"
 
 if [ "$REBOOT_NEEDED" = true ]; then
     echo '⚠️  A system reboot is required to load the new kernel. Please run: sudo reboot'
