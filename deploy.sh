@@ -45,7 +45,7 @@ fi
 echo "📦 Installing required packages..."
 sudo apt-get install -y curl git nginx certbot python3-certbot-nginx
 
-# Install Node.js 18.x
+# Install Node.js 18.x (official way)
 echo "📦 Installing Node.js..."
 curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
 sudo apt-get install -y nodejs
@@ -103,7 +103,7 @@ server {
 
     location / {
         root /var/www/client;
-        try_files $uri $uri/ /index.html;
+        try_files \$uri \$uri/ /index.html;
         expires 30d;
         add_header Cache-Control "public, no-transform";
     }
@@ -111,13 +111,13 @@ server {
     location /api {
         proxy_pass http://localhost:3000;
         proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Host \$host;
+        proxy_cache_bypass \$http_upgrade;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
     }
 
     location /uploads {
@@ -132,7 +132,7 @@ server {
     gzip_min_length 10240;
     gzip_proxied expired no-cache no-store private auth;
     gzip_types text/plain text/css text/xml text/javascript application/x-javascript application/xml application/javascript;
-    gzip_disable "MSIE [1-6]\.";
+    gzip_disable "MSIE [1-6]\\.";
 }
 EOL
 
@@ -167,7 +167,7 @@ sudo tee /etc/nginx/sites-available/datartechnologies.com > /dev/null << 'EOL'
 server {
     listen 80;
     server_name datartechnologies.com www.datartechnologies.com;
-    return 301 https://$server_name$request_uri;
+    return 301 https://\$server_name\$request_uri;
 }
 
 server {
@@ -187,7 +187,7 @@ server {
 
     location / {
         root /var/www/client;
-        try_files $uri $uri/ /index.html;
+        try_files \$uri \$uri/ /index.html;
         expires 30d;
         add_header Cache-Control "public, no-transform";
     }
@@ -195,13 +195,13 @@ server {
     location /api {
         proxy_pass http://localhost:3000;
         proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Host \$host;
+        proxy_cache_bypass \$http_upgrade;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
     }
 
     location /uploads {
@@ -216,7 +216,7 @@ server {
     gzip_min_length 10240;
     gzip_proxied expired no-cache no-store private auth;
     gzip_types text/plain text/css text/xml text/javascript application/x-javascript application/xml application/javascript;
-    gzip_disable "MSIE [1-6]\.";
+    gzip_disable "MSIE [1-6]\\.";
 }
 EOL
 
