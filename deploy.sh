@@ -58,6 +58,7 @@ sudo npm install -g pm2
 echo "📁 Creating directories..."
 sudo mkdir -p /var/www/client
 sudo mkdir -p /var/www/uploads
+sudo mkdir -p /var/www/html/.well-known/acme-challenge
 sudo chown -R $USER:$USER /var/www
 
 # Clone repository if not exists
@@ -95,6 +96,12 @@ sudo tee /etc/nginx/sites-available/technovatechnologies.in > /dev/null << 'EOL'
 server {
     listen 80;
     server_name technovatechnologies.in www.technovatechnologies.in;
+
+    # Let's Encrypt ACME challenge directory
+    location ^~ /.well-known/acme-challenge/ {
+        default_type "text/plain";
+        root /var/www/html;
+    }
 
     location / {
         root /var/www/client;
@@ -165,5 +172,13 @@ dig +short technovatechnologies.in
 dig +short www.technovatechnologies.in
 
 sudo systemctl status nginx
+
+# Ensure the acme-challenge directory exists
+echo "📁 Creating ACME challenge directory..."
+sudo mkdir -p /var/www/html/.well-known/acme-challenge
+sudo chmod -R 755 /var/www/html
+
+# Restart Nginx before attempting certbot
+sudo systemctl reload nginx
 
 sudo certbot --nginx -d technovatechnologies.in -d www.technovatechnologies.in --agree-tos --email vivekvora3226@gmail.com --non-interactive 
