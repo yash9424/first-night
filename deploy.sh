@@ -159,4 +159,9 @@ echo "🌐 Your site should be live at http://technovatechnologies.in"
 
 if [ "$REBOOT_NEEDED" = true ]; then
     echo '⚠️  A system reboot is required to load the new kernel. Please run: sudo reboot'
-fi 
+fi
+
+dig +short technovatechnologies.in
+dig +short www.technovatechnologies.in
+
+sudo systemctl status nginx  
