@@ -110,9 +110,13 @@ sudo nginx -t
 # Restart Nginx
 sudo systemctl restart nginx
 
+# Register with Let's Encrypt first
+echo "🔒 Registering with Let's Encrypt..."
+sudo certbot register --agree-tos --email vivekvora3226@gmail.com --non-interactive
+
 # Install SSL certificate
 echo "🔒 Installing SSL certificate..."
-sudo certbot --nginx -d datartechnologies.com -d www.datartechnologies.com --non-interactive --agree-tos --email your-email@example.com
+sudo certbot --nginx -d datartechnologies.com -d www.datartechnologies.com --non-interactive --agree-tos --email admin@datartechnologies.com
 
 # Update Nginx configuration with SSL settings
 cat > /etc/nginx/sites-available/datartechnologies.com << 'EOL'
