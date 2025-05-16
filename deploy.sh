@@ -7,7 +7,6 @@ echo "🚀 Starting deployment process..."
 
 # Clean up any existing locks
 echo "🔓 Cleaning up package locks..."
-sudo kill 7031 2>/dev/null || true
 sudo rm -f /var/lib/dpkg/lock-frontend
 sudo rm -f /var/lib/apt/lists/lock
 sudo rm -f /var/cache/apt/archives/lock
@@ -15,32 +14,31 @@ sudo rm -f /var/lib/dpkg/lock
 
 # Stop automatic updates
 echo "🛑 Stopping automatic updates..."
-sudo systemctl stop apt-daily.service
-sudo systemctl stop apt-daily.timer
-sudo systemctl stop apt-daily-upgrade.service
-sudo systemctl stop apt-daily-upgrade.timer
+sudo systemctl stop apt-daily.service || true
+sudo systemctl stop apt-daily.timer || true
+sudo systemctl stop apt-daily-upgrade.service || true
+sudo systemctl stop apt-daily-upgrade.timer || true
 
 # Reconfigure package system
 echo "⚙️ Reconfiguring package system..."
 sudo dpkg --configure -a
 
-# Update system
+# Update system (non-interactive)
 echo "📦 Updating system packages..."
-sudo apt-get update
-sudo apt-get upgrade -y
+sudo DEBIAN_FRONTEND=noninteractive apt-get update -y
+sudo DEBIAN_FRONTEND=noninteractive apt-get upgrade -yq
 
 # Check for kernel updates
 echo "🔍 Checking for kernel updates..."
 CURRENT_KERNEL=$(uname -r)
-LATEST_KERNEL=$(dpkg -l | grep linux-image-generic | awk '{print $3}' | cut -d'-' -f1-3)
-
+LATEST_KERNEL=$(dpkg -l | grep linux-image-generic | awk '{print $3}' | cut -d'-' -f1-3 | sort -V | tail -n1)
 if [ "$CURRENT_KERNEL" != "$LATEST_KERNEL-generic" ]; then
     echo "⚠️ Kernel update available: $LATEST_KERNEL-generic"
     echo "⚠️ Current kernel: $CURRENT_KERNEL"
     echo "⚠️ A system reboot will be required after deployment"
-    KERNEL_UPDATE_NEEDED=true
+    REBOOT_NEEDED=true
 else
-    KERNEL_UPDATE_NEEDED=false
+    REBOOT_NEEDED=false
 fi
 
 # Install required packages
@@ -93,7 +91,7 @@ sudo chmod 755 /var/www/uploads
 
 # Setup Nginx - First with HTTP only and ACME challenge location
 echo "🌐 Configuring Nginx..."
-sudo cat > /etc/nginx/sites-available/datartechnologies.com << 'EOL'
+sudo tee /etc/nginx/sites-available/datartechnologies.com > /dev/null << 'EOL'
 server {
     listen 80;
     server_name datartechnologies.com www.datartechnologies.com;
@@ -158,14 +156,14 @@ sleep 30
 
 # Register with Let's Encrypt first
 echo "🔒 Registering with Let's Encrypt..."
-sudo certbot register --agree-tos --email vivekvora3226@gmail.com --non-interactive
+sudo certbot register --agree-tos --email vivekvora3226@gmail.com --non-interactive || true
 
 # Install SSL certificate
 echo "🔒 Installing SSL certificate..."
 sudo certbot certonly --webroot -w /var/www/letsencrypt -d datartechnologies.com -d www.datartechnologies.com --non-interactive --agree-tos --email vivekvora3226@gmail.com
 
 # Update Nginx configuration with SSL settings
-sudo cat > /etc/nginx/sites-available/datartechnologies.com << 'EOL'
+sudo tee /etc/nginx/sites-available/datartechnologies.com > /dev/null << 'EOL'
 server {
     listen 80;
     server_name datartechnologies.com www.datartechnologies.com;
@@ -234,17 +232,14 @@ sudo pm2 save
 
 # Re-enable automatic updates
 echo "🔄 Re-enabling automatic updates..."
-sudo systemctl start apt-daily.service
-sudo systemctl start apt-daily.timer
-sudo systemctl start apt-daily-upgrade.service
-sudo systemctl start apt-daily-upgrade.timer
+sudo systemctl start apt-daily.service || true
+sudo systemctl start apt-daily.timer || true
+sudo systemctl start apt-daily-upgrade.service || true
+sudo systemctl start apt-daily-upgrade.timer || true
 
 echo "✅ Deployment completed successfully!"
 echo "🌐 Your site should be live at https://datartechnologies.com"
 
-# Check if reboot is needed
-if [ "$KERNEL_UPDATE_NEEDED" = true ]; then
-    echo "⚠️ IMPORTANT: A system reboot is required to apply kernel updates."
-    echo "⚠️ Please run: sudo reboot"
-    echo "⚠️ After reboot, your site will continue running normally."
+if [ "$REBOOT_NEEDED" = true ]; then
+    echo '⚠️  A system reboot is required to load the new kernel. Please run: sudo reboot'
 fi 
