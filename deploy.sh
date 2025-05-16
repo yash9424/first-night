@@ -143,9 +143,9 @@ sudo systemctl restart nginx
 
 # Start/Restart services
 echo "🔄 Starting services..."
-sudo pm2 delete datartechnologies-api || true
-sudo pm2 start ecosystem.config.js
-sudo pm2 save
+cd /root/first-night/server
+pm2 start server.js --name technovatechnologies-api || true
+pm2 save
 
 # Re-enable automatic updates
 echo "🔄 Re-enabling automatic updates..."
