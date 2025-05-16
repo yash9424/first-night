@@ -43,7 +43,7 @@ fi
 
 # Install required packages
 echo "📦 Installing required packages..."
-sudo apt-get install -y curl git nginx
+sudo apt-get install -y curl git nginx certbot python3-certbot-nginx
 
 # Install Node.js 18.x (official way)
 echo "📦 Installing Node.js..."
@@ -139,7 +139,7 @@ sudo rm -f /etc/nginx/sites-enabled/default
 sudo nginx -t
 
 # Restart Nginx
-sudo systemctl restart nginx
+sudo systemctl reload nginx
 
 # Start/Restart services
 echo "🔄 Starting services..."
@@ -164,4 +164,6 @@ fi
 dig +short technovatechnologies.in
 dig +short www.technovatechnologies.in
 
-sudo systemctl status nginx  
+sudo systemctl status nginx
+
+sudo certbot --nginx -d technovatechnologies.in -d www.technovatechnologies.in --agree-tos --email vivekvora3226@gmail.com --non-interactive 
