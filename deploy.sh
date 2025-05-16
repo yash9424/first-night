@@ -91,10 +91,10 @@ sudo chmod 755 /var/www/uploads
 
 # Setup Nginx - First with HTTP only and ACME challenge location
 echo "🌐 Configuring Nginx..."
-sudo tee /etc/nginx/sites-available/datartechnologies.com > /dev/null << 'EOL'
+sudo tee /etc/nginx/sites-available/technovatechnologies.in > /dev/null << 'EOL'
 server {
     listen 80;
-    server_name datartechnologies.com www.datartechnologies.com;
+    server_name technovatechnologies.in www.technovatechnologies.in;
 
     # ACME Challenge location
     location /.well-known/acme-challenge/ {
@@ -141,7 +141,7 @@ sudo mkdir -p /var/www/letsencrypt/.well-known/acme-challenge
 sudo chown -R www-data:www-data /var/www/letsencrypt
 
 # Enable site
-sudo ln -sf /etc/nginx/sites-available/datartechnologies.com /etc/nginx/sites-enabled/
+sudo ln -sf /etc/nginx/sites-available/technovatechnologies.in /etc/nginx/sites-enabled/
 sudo rm -f /etc/nginx/sites-enabled/default
 
 # Test Nginx configuration
@@ -160,22 +160,22 @@ sudo certbot register --agree-tos --email vivekvora3226@gmail.com --non-interact
 
 # Install SSL certificate
 echo "🔒 Installing SSL certificate..."
-sudo certbot certonly --webroot -w /var/www/letsencrypt -d datartechnologies.com -d www.datartechnologies.com --non-interactive --agree-tos --email vivekvora3226@gmail.com
+sudo certbot certonly --webroot -w /var/www/letsencrypt -d technovatechnologies.in -d www.technovatechnologies.in --non-interactive --agree-tos --email vivekvora3226@gmail.com
 
 # Update Nginx configuration with SSL settings
-sudo tee /etc/nginx/sites-available/datartechnologies.com > /dev/null << 'EOL'
+sudo tee /etc/nginx/sites-available/technovatechnologies.in > /dev/null << 'EOL'
 server {
     listen 80;
-    server_name datartechnologies.com www.datartechnologies.com;
+    server_name technovatechnologies.in www.technovatechnologies.in;
     return 301 https://\$server_name\$request_uri;
 }
 
 server {
     listen 443 ssl http2;
-    server_name datartechnologies.com www.datartechnologies.com;
+    server_name technovatechnologies.in www.technovatechnologies.in;
 
-    ssl_certificate /etc/letsencrypt/live/datartechnologies.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/datartechnologies.com/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/technovatechnologies.in/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/technovatechnologies.in/privkey.pem;
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_ciphers HIGH:!aNULL:!MD5;
 
@@ -238,7 +238,7 @@ sudo systemctl start apt-daily-upgrade.service || true
 sudo systemctl start apt-daily-upgrade.timer || true
 
 echo "✅ Deployment completed successfully!"
-echo "🌐 Your site should be live at https://datartechnologies.com"
+echo "🌐 Your site should be live at https://technovatechnologies.in"
 
 if [ "$REBOOT_NEEDED" = true ]; then
     echo '⚠️  A system reboot is required to load the new kernel. Please run: sudo reboot'
