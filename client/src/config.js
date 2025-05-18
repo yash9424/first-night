@@ -1,5 +1,8 @@
 // API Configuration
-export const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+export const API_BASE_URL = process.env.REACT_APP_API_URL || 
+  (process.env.NODE_ENV === 'production' 
+    ? 'https://technovatechnologies.in/api'
+    : 'http://localhost:5000');
 
 // Payment Configuration
 export const RAZORPAY_KEY_ID = process.env.REACT_APP_RAZORPAY_KEY_ID;

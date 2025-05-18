@@ -2,9 +2,12 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 
+// Import API_BASE_URL from config
+import { API_BASE_URL } from './config';
+
 // Create axios instance with base URL
 const api = axios.create({
-  baseURL: 'http://localhost:5000'
+  baseURL: API_BASE_URL
 });
 
 // Add request interceptor to include auth token

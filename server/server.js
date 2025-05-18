@@ -45,7 +45,7 @@ const app = express();
 
 // Middlewares
 app.use(cors({
-    origin: ['http://localhost:3000', 'https://datartechnologies.com', 'https://www.datartechnologies.com'],
+    origin: ['http://localhost:3000', 'https://technovatechnologies.in', 'https://www.technovatechnologies.in'],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true

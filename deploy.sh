@@ -3,7 +3,7 @@
 # Exit on error
 set -e
 
-echo "🚀 Starting deployment process..."
+echo "🚀 Starting deployment process for TechnovaTechnologies.in..."
 
 # Clean up any existing locks
 echo "🔓 Cleaning up package locks..."
@@ -11,13 +11,6 @@ sudo rm -f /var/lib/dpkg/lock-frontend
 sudo rm -f /var/lib/apt/lists/lock
 sudo rm -f /var/cache/apt/archives/lock
 sudo rm -f /var/lib/dpkg/lock
-
-# Stop automatic updates
-echo "🛑 Stopping automatic updates..."
-sudo systemctl stop apt-daily.service || true
-sudo systemctl stop apt-daily.timer || true
-sudo systemctl stop apt-daily-upgrade.service || true
-sudo systemctl stop apt-daily-upgrade.timer || true
 
 # Reconfigure package system
 echo "⚙️ Reconfiguring package system..."
@@ -28,24 +21,11 @@ echo "📦 Updating system packages..."
 sudo DEBIAN_FRONTEND=noninteractive apt-get update -y
 sudo DEBIAN_FRONTEND=noninteractive apt-get upgrade -yq
 
-# Check for kernel updates
-echo "🔍 Checking for kernel updates..."
-CURRENT_KERNEL=$(uname -r)
-LATEST_KERNEL=$(dpkg -l | grep linux-image-generic | awk '{print $3}' | cut -d'-' -f1-3 | sort -V | tail -n1)
-if [ "$CURRENT_KERNEL" != "$LATEST_KERNEL-generic" ]; then
-    echo "⚠️ Kernel update available: $LATEST_KERNEL-generic"
-    echo "⚠️ Current kernel: $CURRENT_KERNEL"
-    echo "⚠️ A system reboot will be required after deployment"
-    REBOOT_NEEDED=true
-else
-    REBOOT_NEEDED=false
-fi
-
 # Install required packages
 echo "📦 Installing required packages..."
-sudo apt-get install -y curl git nginx certbot python3-certbot-nginx
+sudo apt-get install -y curl git nginx certbot python3-certbot-nginx mongodb-org
 
-# Install Node.js 18.x (official way)
+# Install Node.js 18.x (LTS)
 echo "📦 Installing Node.js..."
 curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
 sudo apt-get install -y nodejs
@@ -54,9 +34,17 @@ sudo apt-get install -y nodejs
 echo "📦 Installing PM2..."
 sudo npm install -g pm2
 
+# Start MongoDB and enable on boot
+echo "🔄 Starting MongoDB service..."
+sudo systemctl start mongod
+sudo systemctl enable mongod
+sleep 5
+echo "🔍 Checking MongoDB status..."
+sudo systemctl status mongod --no-pager
+
 # Create necessary directories
 echo "📁 Creating directories..."
-sudo mkdir -p /var/www/client
+sudo mkdir -p /var/www/client/build
 sudo mkdir -p /var/www/uploads
 sudo mkdir -p /var/www/html/.well-known/acme-challenge
 sudo chown -R $USER:$USER /var/www
@@ -74,71 +62,37 @@ cd /root/first-night
 echo "📥 Pulling latest changes..."
 git pull origin main
 
+# Create .env file for backend
+echo "🔧 Setting up environment variables..."
+cat > /root/first-night/server/.env << EOL
+PORT=5000
+NODE_ENV=production
+MONGO_URI=mongodb://localhost:27017/technovatech
+JWT_SECRET=$(openssl rand -hex 32)
+CLIENT_URL=https://technovatechnologies.in
+API_URL=https://technovatechnologies.in/api
+EOL
+
 # Setup client
 echo "🏗️ Building client..."
 cd client
-npm install
+npm ci
+echo "REACT_APP_API_URL=https://technovatechnologies.in/api" > .env
 npm run build:prod
 sudo cp -r build/* /var/www/client/
 
 # Setup server
 echo "🏗️ Setting up server..."
 cd ../server
-npm install
+npm ci --production
 
 # Create uploads directory if not exists
 sudo mkdir -p /var/www/uploads
 sudo chmod 755 /var/www/uploads
 
-# Setup Nginx - HTTP only (no SSL)
+# Setup Nginx with SSL support
 echo "🌐 Configuring Nginx..."
-sudo tee /etc/nginx/sites-available/technovatechnologies.in > /dev/null << 'EOL'
-server {
-    listen 80;
-    server_name technovatechnologies.in www.technovatechnologies.in;
-
-    # Let's Encrypt ACME challenge directory
-    location ^~ /.well-known/acme-challenge/ {
-        default_type "text/plain";
-        root /var/www/html;
-    }
-
-    location / {
-        root /var/www/client;
-        try_files $uri $uri/ /index.html;
-        expires 30d;
-        add_header Cache-Control "public, no-transform";
-    }
-
-    location /api {
-        proxy_pass http://localhost:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    location /uploads {
-        alias /var/www/uploads;
-        expires 30d;
-        add_header Cache-Control "public, no-transform";
-    }
-
-    # Gzip compression
-    gzip on;
-    gzip_vary on;
-    gzip_min_length 10240;
-    gzip_proxied expired no-cache no-store private auth;
-    gzip_types text/plain text/css text/xml text/javascript application/x-javascript application/xml application/javascript;
-    gzip_disable "MSIE [1-6]\\.";
-}
-EOL
-
-# Enable site
+sudo cp ../nginx.conf /etc/nginx/sites-available/technovatechnologies.in
 sudo ln -sf /etc/nginx/sites-available/technovatechnologies.in /etc/nginx/sites-enabled/
 sudo rm -f /etc/nginx/sites-enabled/default
 
@@ -148,73 +102,61 @@ sudo nginx -t
 # Restart Nginx
 sudo systemctl reload nginx
 
-# Start/Restart services
+# Obtain SSL certificate
+echo "🔒 Setting up SSL certificate..."
+sudo certbot --nginx -d technovatechnologies.in -d www.technovatechnologies.in --agree-tos --email vivekvora3226@gmail.com --non-interactive || echo "⚠️ SSL setup failed - will try again later"
+
+# Start/Restart services using PM2
 echo "🔄 Starting services..."
-cd /root/first-night/server
-pm2 start server.js --name technovatechnologies-api || true
-pm2 save
-
-# Re-enable automatic updates
-echo "🔄 Re-enabling automatic updates..."
-sudo systemctl start apt-daily.service || true
-sudo systemctl start apt-daily.timer || true
-sudo systemctl start apt-daily-upgrade.service || true
-sudo systemctl start apt-daily-upgrade.timer || true
-
-echo "✅ Deployment completed successfully!"
-echo "🌐 Your site should be live at http://technovatechnologies.in"
-
-if [ "$REBOOT_NEEDED" = true ]; then
-    echo '⚠️  A system reboot is required to load the new kernel. Please run: sudo reboot'
-fi
-
-dig +short technovatechnologies.in
-dig +short www.technovatechnologies.in
-
-sudo systemctl status nginx
-
-# Ensure the acme-challenge directory exists
-echo "📁 Creating ACME challenge directory..."
-sudo mkdir -p /var/www/html/.well-known/acme-challenge
-sudo chmod -R 755 /var/www/html
-
-# Restart Nginx before attempting certbot
-sudo systemctl reload nginx
-
-sudo certbot --nginx -d technovatechnologies.in -d www.technovatechnologies.in --agree-tos --email vivekvora3226@gmail.com --non-interactive
-
-# Pull the latest changes
-echo "📥 Pulling latest changes from git..."
-git pull origin main
-
-# Install dependencies
-echo "📦 Installing server dependencies..."
-cd server
-npm ci --production
-cd ..
-
-# Install client dependencies and build
-echo "🏗️ Building client..."
-cd client
-npm ci --production
-npm run build
-cd ..
-
-# Ensure uploads directory exists
-echo "📁 Creating uploads directory if it doesn't exist..."
-mkdir -p server/uploads
-
-# Copy nginx configuration if needed
-echo "🔧 Updating nginx configuration..."
-sudo cp nginx.conf /etc/nginx/sites-available/datartechnologies.com
-sudo ln -sf /etc/nginx/sites-available/datartechnologies.com /etc/nginx/sites-enabled/
-sudo nginx -t && sudo systemctl restart nginx
-
-# Restart the application with PM2
-echo "🔄 Restarting application with PM2..."
+cd /root/first-night
 pm2 delete all || true
 pm2 start ecosystem.config.js
 
+# Ensure PM2 starts on system reboot
+echo "🔄 Setting up PM2 startup script..."
+pm2 startup
+pm2 save
+
+# Copy server uploads to web-accessible directory
+echo "📁 Setting up uploads directory..."
+rsync -av /root/first-night/server/uploads/ /var/www/uploads/
+sudo chown -R www-data:www-data /var/www/uploads
+
+# Verify MongoDB is running and create database if needed
+echo "🔍 Verifying MongoDB connection..."
+mongo --eval "db.stats()" technovatech || echo "Creating database technovatech"; mongo --eval "db.createCollection('products')" technovatech
+
+# Test API connection
+echo "🔍 Testing API connection..."
+curl -s http://localhost:5000/ || echo "⚠️ Backend not responding"
+
+echo "✅ Deployment completed successfully!"
+echo "🌐 Your site should be live at https://technovatechnologies.in"
+
 # Display status
 echo "ℹ️ PM2 status:"
-pm2 status 
+pm2 status
+
+echo "ℹ️ MongoDB status:"
+sudo systemctl status mongod --no-pager
+
+# Create a quick fix_backend script
+echo "📝 Creating backend fix script..."
+cat > /root/fix_backend.sh << 'EOL'
+#!/bin/bash
+set -e
+echo "🔄 Restarting backend services..."
+cd /root/first-night
+git pull origin main
+cd server
+npm ci --production
+cd ..
+pm2 reload all
+pm2 save
+echo "✅ Backend services restarted!"
+pm2 status
+EOL
+
+chmod +x /root/fix_backend.sh
+
+echo "🎉 All done! Your MERN stack application is now deployed at https://technovatechnologies.in"
