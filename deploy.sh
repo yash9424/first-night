@@ -181,4 +181,40 @@ sudo chmod -R 755 /var/www/html
 # Restart Nginx before attempting certbot
 sudo systemctl reload nginx
 
-sudo certbot --nginx -d technovatechnologies.in -d www.technovatechnologies.in --agree-tos --email vivekvora3226@gmail.com --non-interactive 
+sudo certbot --nginx -d technovatechnologies.in -d www.technovatechnologies.in --agree-tos --email vivekvora3226@gmail.com --non-interactive
+
+# Pull the latest changes
+echo "📥 Pulling latest changes from git..."
+git pull origin main
+
+# Install dependencies
+echo "📦 Installing server dependencies..."
+cd server
+npm ci --production
+cd ..
+
+# Install client dependencies and build
+echo "🏗️ Building client..."
+cd client
+npm ci --production
+npm run build
+cd ..
+
+# Ensure uploads directory exists
+echo "📁 Creating uploads directory if it doesn't exist..."
+mkdir -p server/uploads
+
+# Copy nginx configuration if needed
+echo "🔧 Updating nginx configuration..."
+sudo cp nginx.conf /etc/nginx/sites-available/datartechnologies.com
+sudo ln -sf /etc/nginx/sites-available/datartechnologies.com /etc/nginx/sites-enabled/
+sudo nginx -t && sudo systemctl restart nginx
+
+# Restart the application with PM2
+echo "🔄 Restarting application with PM2..."
+pm2 delete all || true
+pm2 start ecosystem.config.js
+
+# Display status
+echo "ℹ️ PM2 status:"
+pm2 status 

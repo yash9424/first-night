@@ -25,7 +25,7 @@ const connectDB = require('./config/db');
 connectDB();
 
 // Load models
-require('./models/order');
+require('./models/Order');
 require('./models/user');
 require('./models/product');
 require('./models/category');
@@ -45,7 +45,7 @@ const app = express();
 
 // Middlewares
 app.use(cors({
-    origin: 'http://localhost:3000',
+    origin: ['http://localhost:3000', 'https://datartechnologies.com', 'https://www.datartechnologies.com'],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true
