@@ -1,6 +1,6 @@
 module.exports = {
   apps: [{
-    name: 'datartechnologies-api',
+    name: 'technovatechnologies-api',
     script: 'server/server.js',
     instances: 'max',
     exec_mode: 'cluster',
