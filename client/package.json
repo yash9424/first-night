@@ -1,5 +1,5 @@
 {
-  "name": "my-branda",
+  "name": "First-Night",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -12,8 +12,8 @@
     "bootstrap": "^5.3.5",
     "date-fns": "^4.1.0",
     "file-saver": "^2.0.5",
+    "First-Night": "file:",
     "jwt-decode": "^4.0.0",
-    "my-branda": "file:",
     "react": "^19.1.0",
     "react-bootstrap": "^2.10.9",
     "react-dom": "^19.1.0",
