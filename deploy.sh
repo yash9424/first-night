@@ -1,130 +1,93 @@
 #!/bin/bash
 
-# Exit on error
-set -e
-
-# Configuration
-APP_NAME="technovatechnologies"
-DEPLOY_USER="$USER"
-APP_DIR="/var/www"
-NODE_VERSION="20.11.1"
-PM2_SERVICE_NAME="pm2-$DEPLOY_USER"
-
-echo "Starting deployment process..."
-
 # Update system
-echo "Updating system packages..."
-sudo apt-get update
-sudo apt-get upgrade -y
+echo "Updating system..."
+apt update && apt upgrade -y
 
-# Install required packages
-echo "Installing required packages..."
-sudo apt-get install -y curl build-essential git nginx certbot python3-certbot-nginx
+# Install Node.js
+echo "Installing Node.js..."
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+apt install -y nodejs
 
-# Install Node.js if not present
-if ! command -v node &> /dev/null; then
-    echo "Installing Node.js..."
-    curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-    sudo apt-get install -y nodejs
-fi
+# Install MongoDB
+echo "Installing MongoDB..."
+apt install -y mongodb
+systemctl start mongodb
+systemctl enable mongodb
 
-# Create necessary directories
-echo "Setting up directories..."
-sudo mkdir -p $APP_DIR/client/build
-sudo mkdir -p $APP_DIR/uploads
-sudo mkdir -p /var/log/pm2
+# Install Nginx
+echo "Installing Nginx..."
+apt install -y nginx
 
-# Set proper permissions
-echo "Setting permissions..."
-sudo chown -R $DEPLOY_USER:$DEPLOY_USER $APP_DIR
-sudo chown -R $DEPLOY_USER:$DEPLOY_USER /var/log/pm2
+# Install certbot for SSL
+apt install -y certbot python3-certbot-nginx
 
-# Setup backend first
-echo "Setting up backend..."
-chmod +x setup_backend.sh
-./setup_backend.sh
+# Create directory for the application
+mkdir -p /var/www/first-night
+cd /var/www/first-night
 
-# Install dependencies and build client
-echo "Building client..."
-cd client
-npm ci --production
+# Clone the repository
+echo "Cloning repository..."
+git clone https://github.com/yash9424/first-night.git .
+
+# Setup backend
+cd server
+npm install
+echo "Creating .env file for backend..."
+cat > .env << EOL
+PORT=5000
+MONGODB_URI=mongodb://localhost:27017/jewelry_shop
+JWT_SECRET=your_jwt_secret_here
+EOL
+
+# Setup frontend
+cd ../client
+npm install
 npm run build
-sudo cp -r build/* $APP_DIR/client/build/
 
 # Configure Nginx
 echo "Configuring Nginx..."
-sudo cp ../nginx.conf /etc/nginx/sites-available/$APP_NAME
-sudo ln -sf /etc/nginx/sites-available/$APP_NAME /etc/nginx/sites-enabled/
-sudo rm -f /etc/nginx/sites-enabled/default
+cat > /etc/nginx/sites-available/first-night << EOL
+server {
+    listen 80;
+    server_name technovatechnologies.in;
+
+    location / {
+        root /var/www/first-night/client/build;
+        index index.html;
+        try_files \$uri \$uri/ /index.html;
+    }
+
+    location /api {
+        proxy_pass http://localhost:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host \$host;
+        proxy_cache_bypass \$http_upgrade;
+    }
+}
+EOL
+
+# Enable the site
+ln -s /etc/nginx/sites-available/first-night /etc/nginx/sites-enabled/
+rm /etc/nginx/sites-enabled/default
+
+# Install PM2 for process management
+npm install -g pm2
+
+# Start the applications
+cd /var/www/first-night/server
+pm2 start server.js --name "first-night-backend"
 
 # Test Nginx configuration
-echo "Testing Nginx configuration..."
-sudo nginx -t
-
-# Setup SSL with Let's Encrypt
-echo "Setting up SSL..."
-sudo certbot --nginx -d technovatechnologies.in -d www.technovatechnologies.in --non-interactive --agree-tos --email admin@technovatechnologies.in
+nginx -t
 
 # Restart Nginx
-echo "Restarting Nginx..."
-sudo systemctl restart nginx
+systemctl restart nginx
 
-# Setup log rotation
-echo "Setting up log rotation..."
-sudo tee /etc/logrotate.d/$APP_NAME << EOF
-/var/log/pm2/*.log {
-    daily
-    rotate 7
-    compress
-    delaycompress
-    missingok
-    notifempty
-    create 0640 $DEPLOY_USER $DEPLOY_USER
-}
-EOF
+# Setup SSL
+echo "Setting up SSL..."
+certbot --nginx -d technovatechnologies.in --non-interactive --agree-tos --email your-email@example.com
 
-# Setup system optimizations
-echo "Optimizing system settings..."
-sudo tee /etc/sysctl.d/99-app-optimizations.conf << EOF
-# Increase system file descriptor limit
-fs.file-max = 65535
-
-# Increase TCP max buffer size
-net.core.rmem_max = 16777216
-net.core.wmem_max = 16777216
-
-# Increase TCP auto-tuning buffer limits
-net.ipv4.tcp_rmem = 4096 87380 16777216
-net.ipv4.tcp_wmem = 4096 65536 16777216
-
-# Enable TCP Fast Open
-net.ipv4.tcp_fastopen = 3
-
-# Optimize network security
-net.ipv4.tcp_syncookies = 1
-net.ipv4.tcp_max_syn_backlog = 4096
-EOF
-
-# Apply sysctl settings
-sudo sysctl --system
-
-# Final verification
-echo "Performing final verification..."
-echo "Checking backend status..."
-if curl -s http://localhost:5000/api/health >/dev/null; then
-    echo "✓ Backend is running"
-else
-    echo "⚠ Backend check failed"
-    pm2 logs --lines 20
-fi
-
-echo "Checking frontend status..."
-if curl -s -o /dev/null -w "%{http_code}" https://technovatechnologies.in | grep -q "200\|301\|302"; then
-    echo "✓ Frontend is accessible"
-else
-    echo "⚠ Frontend check failed"
-    sudo nginx -t
-fi
-
-echo "Deployment completed successfully!"
-echo "Your website should now be running at https://technovatechnologies.in"
+echo "Deployment completed!" 

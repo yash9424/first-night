@@ -1,8 +1,10 @@
 const express = require('express');
-const mongoose = require('mongoose');
 const cors = require('cors');
-const dotenv = require('dotenv');
 const path = require('path');
+const connectDB = require('./config/database');
+
+// Initialize express app
+const app = express();
 
 // Route imports
 const productRoutes = require('./routes/products');
@@ -11,42 +13,26 @@ const categoryRoutes = require('./routes/categories');
 const authRoutes = require('./routes/auth');
 const orderRoutes = require('./routes/orders');
 
-// Load environment variables
-dotenv.config();
-
-// Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI)
-    .then(() => console.log('Connected to MongoDB'))
-    .catch(err => console.error('MongoDB connection error:', err));
-
-// Initialize express app
-const app = express();
-
-// Middleware
+// Security Middleware
 app.use(cors({
-    origin: 'http://localhost:3000',
+    origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true
 }));
-app.use(express.json());
+app.use(express.json({ limit: process.env.MAX_FILE_SIZE || '5mb' }));
 
 // Configure uploads directory
-const uploadsDir = path.join(__dirname, 'uploads');
-console.log('Uploads directory:', uploadsDir); // Debug log
+const uploadsDir = process.env.UPLOAD_PATH || path.join(__dirname, 'uploads');
 app.use('/uploads', express.static(uploadsDir));
 
-// Add middleware to log static file requests
-app.use('/uploads', (req, res, next) => {
-    console.log('Accessing file:', req.url);
-    next();
-});
-
-// Add middleware to log all requests
-app.use((req, res, next) => {
-    console.log(`${req.method} ${req.path} - ${new Date().toISOString()}`);
-    next();
-});
+// Request logging in development
+if (process.env.NODE_ENV !== 'production') {
+    app.use((req, res, next) => {
+        console.log(`${req.method} ${req.path} - ${new Date().toISOString()}`);
+        next();
+    });
+}
 
 // Routes
 app.use('/api/products', productRoutes);
@@ -66,8 +52,39 @@ if (process.env.NODE_ENV === 'production') {
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error(err.stack);
-    res.status(500).json({ message: 'Something went wrong!' });
+    res.status(500).json({ 
+        success: false,
+        message: process.env.NODE_ENV === 'production' 
+            ? 'Something went wrong!' 
+            : err.message
+    });
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`)); 
+// Connect to MongoDB and start server
+const startServer = async () => {
+    try {
+        await connectDB();
+        const PORT = process.env.PORT || 5000;
+        app.listen(PORT, () => {
+            console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+            console.log(`MongoDB Connected Successfully`);
+        });
+    } catch (error) {
+        console.error('Failed to start server:', error);
+        process.exit(1);
+    }
+};
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (err) => {
+    console.error('Uncaught Exception:', err);
+    process.exit(1);
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (err) => {
+    console.error('Unhandled Rejection:', err);
+    process.exit(1);
+});
+
+startServer(); 
