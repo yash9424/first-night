@@ -5,6 +5,20 @@ set -e
 
 echo "Starting backend setup..."
 
+# Install Node.js and npm if not present
+if ! command -v node &> /dev/null; then
+    echo "Installing Node.js and npm..."
+    sudo apt-get install -y ca-certificates curl gnupg
+    sudo mkdir -p /etc/apt/keyrings
+    curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
+    echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x nodistro main" | sudo tee /etc/apt/sources.list.d/nodesource.list
+    sudo apt-get update
+    sudo apt-get install -y nodejs
+    # Verify installation
+    node --version
+    npm --version
+fi
+
 # Install MongoDB if not present
 if ! command -v mongod &> /dev/null; then
     echo "Installing MongoDB..."
@@ -123,6 +137,7 @@ fi
 # Setup PM2
 echo "Setting up PM2..."
 if ! command -v pm2 &> /dev/null; then
+    echo "Installing PM2..."
     sudo npm install -g pm2
 fi
 
