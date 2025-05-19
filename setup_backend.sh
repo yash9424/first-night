@@ -16,17 +16,59 @@ if ! command -v mongod &> /dev/null; then
         sudo tee /etc/apt/sources.list.d/mongodb-org-7.0.list
     sudo apt-get update
     sudo apt-get install -y mongodb-org
-    sudo systemctl start mongod
-    sudo systemctl enable mongod
 fi
 
-# Wait for MongoDB to be ready
+# Configure MongoDB to listen on all interfaces
+echo "Configuring MongoDB..."
+sudo tee /etc/mongod.conf > /dev/null << EOF
+storage:
+  dbPath: /var/lib/mongodb
+systemLog:
+  destination: file
+  logAppend: true
+  path: /var/log/mongodb/mongod.log
+net:
+  port: 27017
+  bindIp: 0.0.0.0
+security:
+  authorization: disabled
+processManagement:
+  timeZoneInfo: /usr/share/zoneinfo
+EOF
+
+# Ensure MongoDB directories exist with proper permissions
+sudo mkdir -p /var/lib/mongodb
+sudo mkdir -p /var/log/mongodb
+sudo chown -R mongodb:mongodb /var/lib/mongodb
+sudo chown -R mongodb:mongodb /var/log/mongodb
+sudo chmod 755 /var/lib/mongodb
+sudo chmod 755 /var/log/mongodb
+
+# Restart MongoDB service
+echo "Starting MongoDB service..."
+sudo systemctl daemon-reload
+sudo systemctl restart mongod
+sudo systemctl enable mongod
+
+# Wait for MongoDB to be ready with timeout
 echo "Waiting for MongoDB to be ready..."
-sleep 5
-until mongo --eval "print(\"waited for connection\")" 2>/dev/null; do
-    sleep 1
-    echo "Waiting for MongoDB to be ready..."
+max_attempts=30
+attempt=1
+while ! mongosh --eval "db.adminCommand('ping')" --quiet >/dev/null 2>&1; do
+    if [ $attempt -gt $max_attempts ]; then
+        echo "Error: MongoDB failed to start after $max_attempts attempts"
+        echo "Checking MongoDB status..."
+        sudo systemctl status mongod
+        echo "Checking MongoDB logs..."
+        sudo tail -n 50 /var/log/mongodb/mongod.log
+        exit 1
+    fi
+    echo "Attempt $attempt of $max_attempts: Waiting for MongoDB to be ready..."
+    sleep 2
+    attempt=$((attempt + 1))
 done
+
+echo "MongoDB is ready!"
 
 # Create data directories if they don't exist
 echo "Setting up data directories..."
@@ -68,8 +110,10 @@ npm ci --production
 
 # Create MongoDB indexes and initial data
 echo "Setting up database..."
-if [ -f "setup-db.js" ]; then
-    mongo technovatech server/scripts/setup-db.js
+if [ -f "scripts/setup-db.js" ]; then
+    mongosh technovatech scripts/setup-db.js
+else
+    echo "Warning: setup-db.js not found in scripts directory"
 fi
 
 # Setup PM2
