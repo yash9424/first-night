@@ -10,13 +10,15 @@ if [ ! -f "server/.env" ]; then
     echo "Creating new backend .env file..."
     cat > server/.env << EOL
 PORT=5000
-MONGODB_URI=mongodb://localhost:27017/technovatech
+MONGO_URI=mongodb://localhost:27017/jewelry_shop
 NODE_ENV=production
 JWT_SECRET=$(openssl rand -base64 32)
 CLIENT_URL=https://technovatechnologies.in
 EOL
 else
     echo "Using existing backend .env file"
+    # Update MongoDB URI if it exists
+    sed -i 's|mongodb://localhost:27017/[^/]*|mongodb://localhost:27017/jewelry_shop|g' server/.env
 fi
 
 # Ensure proper permissions
@@ -45,9 +47,16 @@ fi
 sudo mkdir -p /var/log/pm2
 sudo chown -R $USER:$USER /var/log/pm2
 
-# Restart the application
-echo "Restarting application..."
+# Stop any existing PM2 processes
+echo "Stopping existing PM2 processes..."
 pm2 delete all 2>/dev/null || true
+
+# Clear PM2 logs
+echo "Clearing PM2 logs..."
+sudo rm -f /var/log/pm2/*.log
+
+# Start the application with PM2
+echo "Starting application with PM2..."
 pm2 start ecosystem.config.js
 pm2 save
 

@@ -32,8 +32,8 @@ if ! command -v mongod &> /dev/null; then
     sudo apt-get install -y mongodb-org
 fi
 
-# Configure MongoDB to listen on all interfaces
-echo "Configuring MongoDB..."
+# Configure MongoDB to match local development setup
+echo "Configuring MongoDB for local development..."
 sudo tee /etc/mongod.conf > /dev/null << EOF
 storage:
   dbPath: /var/lib/mongodb
@@ -43,7 +43,7 @@ systemLog:
   path: /var/log/mongodb/mongod.log
 net:
   port: 27017
-  bindIp: 0.0.0.0
+  bindIp: 127.0.0.1
 security:
   authorization: disabled
 processManagement:
@@ -64,7 +64,7 @@ sudo systemctl daemon-reload
 sudo systemctl restart mongod
 sudo systemctl enable mongod
 
-# Wait for MongoDB to be ready with timeout
+# Wait for MongoDB to be ready
 echo "Waiting for MongoDB to be ready..."
 max_attempts=30
 attempt=1
@@ -102,7 +102,7 @@ if [ ! -f "server/.env" ]; then
     echo "Creating new backend .env file..."
     cat > server/.env << EOL
 PORT=5000
-MONGODB_URI=mongodb://localhost:27017/technovatech
+MONGO_URI=mongodb://localhost:27017/jewelry_shop
 NODE_ENV=production
 JWT_SECRET=$(openssl rand -base64 32)
 CLIENT_URL=https://technovatechnologies.in
@@ -110,6 +110,8 @@ UPLOAD_PATH=/var/www/uploads
 EOL
 else
     echo "Using existing backend .env file"
+    # Update MongoDB URI if it exists
+    sed -i 's|mongodb://localhost:27017/[^/]*|mongodb://localhost:27017/jewelry_shop|g' server/.env
 fi
 
 # Set proper permissions for .env
@@ -137,7 +139,6 @@ fi
 # Setup PM2
 echo "Setting up PM2..."
 if ! command -v pm2 &> /dev/null; then
-    echo "Installing PM2..."
     sudo npm install -g pm2
 fi
 
