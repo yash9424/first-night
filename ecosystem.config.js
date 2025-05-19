@@ -2,11 +2,11 @@ module.exports = {
   apps: [{
     name: 'technovatechnologies-api',
     script: 'server/server.js',
-    instances: 1,
-    exec_mode: 'fork',
+    instances: 'max',
+    exec_mode: 'cluster',
     autorestart: true,
     watch: false,
-    max_memory_restart: '512M',
+    max_memory_restart: '768M',
     env: {
       NODE_ENV: 'production',
       PORT: 5000
@@ -14,6 +14,10 @@ module.exports = {
     error_file: '/var/log/pm2/error.log',
     out_file: '/var/log/pm2/out.log',
     time: true,
-    node_args: '--max-old-space-size=384'
+    node_args: '--max-old-space-size=512',
+    exp_backoff_restart_delay: 100,
+    max_restarts: 10,
+    merge_logs: true,
+    log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
   }]
 };  
