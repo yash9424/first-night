@@ -5,16 +5,9 @@ set -e
 
 echo "🚀 Starting deployment process for TechnovaTechnologies.in..."
 
-# Clean up any existing locks
-echo "🔓 Cleaning up package locks..."
-sudo rm -f /var/lib/dpkg/lock-frontend
-sudo rm -f /var/lib/apt/lists/lock
-sudo rm -f /var/cache/apt/archives/lock
-sudo rm -f /var/lib/dpkg/lock
-
-# Reconfigure package system
-echo "⚙️ Reconfiguring package system..."
-sudo dpkg --configure -a
+# Create log directory
+sudo mkdir -p /var/log/pm2
+sudo chown -R $USER:$USER /var/log/pm2
 
 # Update system (non-interactive)
 echo "📦 Updating system packages..."
@@ -24,6 +17,49 @@ sudo DEBIAN_FRONTEND=noninteractive apt-get upgrade -yq
 # Install required packages
 echo "📦 Installing required packages..."
 sudo apt-get install -y curl git nginx certbot python3-certbot-nginx mongodb-org
+
+# Configure MongoDB for minimal resources
+echo "⚙️ Configuring MongoDB..."
+sudo tee /etc/mongod.conf << EOF
+systemLog:
+  destination: file
+  path: /var/log/mongodb/mongod.log
+  logAppend: true
+storage:
+  dbPath: /var/lib/mongodb
+  journal:
+    enabled: true
+  wiredTiger:
+    engineConfig:
+      cacheSizeGB: 0.25
+      journalCompressor: snappy
+      directoryForIndexes: false
+    collectionConfig:
+      blockCompressor: snappy
+    indexConfig:
+      prefixCompression: true
+processManagement:
+  fork: true
+  pidFilePath: /var/run/mongodb/mongod.pid
+net:
+  port: 27017
+  bindIp: 127.0.0.1
+operationProfiling:
+  slowOpThresholdMs: 100
+  mode: slowOp
+setParameter:
+  internalQueryExecMaxBlockingSortBytes: 33554432
+  maxInMemorySort: 33554432
+EOF
+
+# Configure system limits
+echo "⚙️ Configuring system limits..."
+sudo tee /etc/security/limits.d/mongodb.conf << EOF
+mongodb soft nofile 64000
+mongodb hard nofile 64000
+mongodb soft nproc 32000
+mongodb hard nproc 32000
+EOF
 
 # Install Node.js 18.x (LTS)
 echo "📦 Installing Node.js..."
@@ -36,7 +72,7 @@ sudo npm install -g pm2
 
 # Start MongoDB and enable on boot
 echo "🔄 Starting MongoDB service..."
-sudo systemctl start mongod
+sudo systemctl restart mongod
 sudo systemctl enable mongod
 sleep 5
 echo "🔍 Checking MongoDB status..."
@@ -96,6 +132,56 @@ sudo cp ../nginx.conf /etc/nginx/sites-available/technovatechnologies.in
 sudo ln -sf /etc/nginx/sites-available/technovatechnologies.in /etc/nginx/sites-enabled/
 sudo rm -f /etc/nginx/sites-enabled/default
 
+# Configure Nginx worker processes for minimal memory
+echo "⚙️ Optimizing Nginx configuration..."
+sudo tee /etc/nginx/nginx.conf << EOF
+user www-data;
+worker_processes 1;
+worker_rlimit_nofile 65535;
+pid /run/nginx.pid;
+
+events {
+    worker_connections 1024;
+    multi_accept on;
+    use epoll;
+}
+
+http {
+    sendfile on;
+    tcp_nopush on;
+    tcp_nodelay on;
+    keepalive_timeout 65;
+    types_hash_max_size 2048;
+    server_tokens off;
+    client_max_body_size 10M;
+    
+    # Buffer size optimizations
+    client_body_buffer_size 128k;
+    client_header_buffer_size 1k;
+    large_client_header_buffers 4 4k;
+    
+    # Timeouts
+    client_body_timeout 12;
+    client_header_timeout 12;
+    send_timeout 10;
+    
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
+    
+    access_log /var/log/nginx/access.log;
+    error_log /var/log/nginx/error.log;
+    
+    gzip on;
+    gzip_disable "msie6";
+    gzip_comp_level 2;
+    gzip_min_length 1000;
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
+    
+    include /etc/nginx/conf.d/*.conf;
+    include /etc/nginx/sites-enabled/*;
+}
+EOF
+
 # Test Nginx configuration
 sudo nginx -t
 
@@ -130,6 +216,41 @@ mongo --eval "db.stats()" technovatech || echo "Creating database technovatech";
 echo "🔍 Testing API connection..."
 curl -s http://localhost:5000/ || echo "⚠️ Backend not responding"
 
+# Set up log rotation
+echo "📝 Setting up log rotation..."
+sudo tee /etc/logrotate.d/pm2-user << EOF
+/var/log/pm2/*.log {
+    daily
+    rotate 7
+    compress
+    delaycompress
+    notifempty
+    create 0640 $USER $USER
+    sharedscripts
+    postrotate
+        pm2 reloadLogs
+    endscript
+}
+EOF
+
+# Set up system monitoring
+echo "📊 Setting up system monitoring..."
+sudo apt-get install -y htop
+sudo tee /etc/systemd/system/monitor.service << EOF
+[Unit]
+Description=System Monitor
+After=network.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/bin/htop
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
 echo "✅ Deployment completed successfully!"
 echo "🌐 Your site should be live at https://technovatechnologies.in"
 
@@ -158,5 +279,31 @@ pm2 status
 EOL
 
 chmod +x /root/fix_backend.sh
+
+# Configure system swap
+echo "⚙️ Configuring swap..."
+if [ ! -f /swapfile ]; then
+    sudo fallocate -l 1G /swapfile
+    sudo chmod 600 /swapfile
+    sudo mkswap /swapfile
+    sudo swapon /swapfile
+    echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+fi
+
+# Configure system for low memory usage
+echo "⚙️ Optimizing system for low memory usage..."
+sudo tee /etc/sysctl.d/99-low-memory.conf << EOF
+vm.swappiness = 10
+vm.vfs_cache_pressure = 50
+vm.dirty_ratio = 10
+vm.dirty_background_ratio = 5
+EOF
+
+sudo sysctl -p /etc/sysctl.d/99-low-memory.conf
+
+# Restart services with new configurations
+echo "🔄 Restarting services with new configurations..."
+sudo systemctl restart mongod
+sudo systemctl restart nginx
 
 echo "🎉 All done! Your MERN stack application is now deployed at https://technovatechnologies.in"
