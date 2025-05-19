@@ -83,9 +83,10 @@ if [ ! -d "server" ]; then
     exit 1
 fi
 
-# Create backend environment file
-echo "Creating .env file..."
-cat > server/.env << EOL
+# Create backend environment file only if it doesn't exist
+if [ ! -f "server/.env" ]; then
+    echo "Creating new backend .env file..."
+    cat > server/.env << EOL
 PORT=5000
 MONGODB_URI=mongodb://localhost:27017/technovatech
 NODE_ENV=production
@@ -93,6 +94,9 @@ JWT_SECRET=$(openssl rand -base64 32)
 CLIENT_URL=https://technovatechnologies.in
 UPLOAD_PATH=/var/www/uploads
 EOL
+else
+    echo "Using existing backend .env file"
+fi
 
 # Set proper permissions for .env
 chmod 600 server/.env
