@@ -195,5 +195,9 @@ orderSchema.pre('save', function(next) {
     next();
 });
 
+<<<<<<< HEAD
 const Order = mongoose.model('Order', orderSchema);
+=======
+const Order = mongoose.models.Order || mongoose.model('Order', orderSchema);
+>>>>>>> e640c03 (Initial push or updated code)
 module.exports = Order; 
